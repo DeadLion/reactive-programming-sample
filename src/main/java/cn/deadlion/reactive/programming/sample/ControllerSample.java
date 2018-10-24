@@ -11,10 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * @author admin
@@ -45,7 +42,7 @@ public class ControllerSample {
 
 
     @RequestMapping("/getStudentInfoWithFuture")
-    public Object testWhitCallable() {
+    public Object getStudentInfoWithFuture() {
         long start = System.currentTimeMillis();
         Map<String, Object> resultMap = new HashMap<>(10);
 
@@ -85,9 +82,57 @@ public class ControllerSample {
         return resultMap;
     }
 
+    @RequestMapping("/getStudentInfoWithCompletableFuture")
+    public Object getStudentInfoWithCompletableFuture() {
+        long start = System.currentTimeMillis();
+        Map<String, Object> resultMap = new HashMap<>(10);
+
+        try {
+            CompletableFuture<Object> completableFutureStudentName = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return studentService.getStudentName();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            });
+
+            CompletableFuture<Object> completableFutureSutdentAge = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return studentService.getSutdentAge();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            });
+
+            CompletableFuture<Object> completableFutureFamilyInfo = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return studentService.getSutdentFamilyInfo();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            });
+
+            CompletableFuture.allOf(completableFutureStudentName, completableFutureSutdentAge, completableFutureFamilyInfo).join();
+
+            resultMap.put("studentName", completableFutureStudentName.get());
+            resultMap.put("studentAge", completableFutureSutdentAge.get());
+            resultMap.put("studentFamilyInfo", completableFutureFamilyInfo.get());
+
+        } catch (Exception e) {
+            resultMap.put("errMsg", e.getMessage());
+        }
+
+        resultMap.put("total cost", System.currentTimeMillis() - start);
+
+        return resultMap;
+    }
+
 
     @RequestMapping("/getStudentInfoWithRxJava")
-    public Object testWithRxJava() {
+    public Object getStudentInfoWithRxJava() {
         long start = System.currentTimeMillis();
         Map<String, Object> resultMap = new HashMap<>(10);
 
